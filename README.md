@@ -1,9 +1,9 @@
-Cloud Honeypot — SSH/Telnet Threat Intelligence Lab
+## Cloud Honeypot — SSH/Telnet Threat Intelligence Lab
 
 An attack simulation using the production style honeypot set up on the AWS EC2 environment. It was designed as a self-assigned security portfolio project.
 
 
-What Is This?
+**What Is This?**
 
 A Honeypot refers to an intentionally created trap server used for attracting attackers while recording everything they do but not giving them any real access. This project will use Cowrie, which is an open-source medium interaction honeypot that simulates SSH and Telnet services, installed in an AWS EC2 environment.
 
@@ -33,7 +33,7 @@ Cowrie logs everything to:
 ```
 
 
-## 🔍 Real Attack Data (First Week Live)
+**Real Attack Data (First Week Live)**
 
 Within minutes of going live, bots began scanning and connecting. Here's what was captured:
 
@@ -72,7 +72,7 @@ Security Design Decisions
 
 
 
-Breach Journal Dashboard
+**Breach Journal Dashboard**
 
 This repo includes an interactive HTML dashboard (`breach_journal.html`) for visualizing Cowrie log data.
 
@@ -92,7 +92,7 @@ How to use:
 
 ---
 
-Tech Stack
+**Tech Stack**
 
 | Cloud platform | AWS EC2 |
 | Operating system | Ubuntu Server 24.04 LTS |
@@ -106,7 +106,7 @@ Tech Stack
 
 
 
-Repository Structure
+**Repository Structure**
 
 ```
 cowrie-honeypot/
@@ -117,7 +117,7 @@ cowrie-honeypot/
 ```
 
 
-Setup Overview
+**Setup Overview**
 
 Full step-by-step notes are kept in my private project notebook. This is a high-level summary.
 
@@ -131,7 +131,7 @@ Full step-by-step notes are kept in my private project notebook. This is a high-
 8. Configured iptables redirection and opened ports 22/23 in the AWS security group
 
 
-Key Learnings
+**Key Learnings**
 
 - The automated bots start targeting servers once the machine is live as the internet is always being scanned
 - Most of the bots employ a limited dictionary of default credentials (`admin/admin`, `root/default`) — these are directed towards IoT devices and routers, not only servers
@@ -140,7 +140,7 @@ Key Learnings
 - File permissions on Windows ACL in OneDrive folders prevent SSH key authentication — keep `.pem` files in simple directories without OneDrive
 
 
-Legal & Ethical Notes
+**Legal & Ethical Notes**
 
 - The honeypot was set up using my own AWS resources for research/education
 - None of the traffic was redirected, used or forwarded to third parties
@@ -148,4 +148,4 @@ Legal & Ethical Notes
 - All download attempts were thwarted using Cowrie's sandbox; no malware was actually run/downloaded
 
 
-Built by Daman — Ontario Tech University 
+**Built by Daman — Ontario Tech University** 
