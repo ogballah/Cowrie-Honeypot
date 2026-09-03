@@ -208,25 +208,3 @@ security group rule to "My IP" again first.)
 
 ---
 
-
-
----
-
-## Quick Reference
-
-| EC2 Public IP | `3.14.67.126` |
-| Key file | `honeypot-key-new.pem` (stored at `C:\Users\daman\`) |
-| Real SSH management port | `2200` (locked to My IP) |
-| Honeypot SSH port (public-facing) | `22` → redirected to Cowrie's `2222` |
-| Honeypot Telnet port (public-facing) | `23` → redirected to Cowrie's `2223` |
-| Reconnect command | `ssh -i "honeypot-key-new.pem" -p 2200 ubuntu@3.14.67.126` |
-| Security group | `honeypot-sg` |
-| Region | N. Virginia (us-east-1) |
-| Instance type | t3.micro |
-| OS | Ubuntu Server 24.04 LTS |
-| Start Cowrie | `cowrie start` |
-| Cowrie log file | `/home/cowrie/cowrie/var/log/cowrie/cowrie.json` |
-| Watch logs live | `sudo -u cowrie tail -f /home/cowrie/cowrie/var/log/cowrie/cowrie.json` |
-
----
-
