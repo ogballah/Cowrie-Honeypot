@@ -1,21 +1,21 @@
-# Cloud Honeypot Project — My Notes
+Cloud Honeypot Project — My Notes
 
-## Introduction: What This Project Is
+Introduction: What This Project Is
 
-I'm building a **cloud honeypot** — a fake server that pretends to be a real Linux
+I'm building a cloud honeypot, a fake server that pretends to be a real Linux
 machine with SSH (and Telnet) open. It sits on the internet and attracts bots and
 attackers who are constantly scanning for weak servers to break into.
 
-Instead of a real server, they hit **Cowrie** — software that fakes a realistic
+Instead of a real server, they hit Cowrie, software that fakes a realistic
 login and shell, lets them "in," and quietly logs everything: their IP address,
 the passwords they tried, and every command they typed. Nothing they do actually
 touches a real system — it's all sandboxed.
 
-This is a legitimate, well-known **defensive / blue-team security project**. The
+This is a legitimate, well-known defensive / blue-team security project. The
 goal is to collect real-world attack data, analyze it, and use it as a portfolio
 piece for cybersecurity internship applications.
 
-**The plan, phase by phase:**
+The plan, phase by phase:
 1. Set up an isolated AWS server (locked down, not exposed yet)
 2. Install Cowrie on it
 3. Test Cowrie safely from the inside (still not exposed)
@@ -24,15 +24,9 @@ piece for cybersecurity internship applications.
 6. Later: add a VPN for safer management access, and build a
    "breach journal" web app that turns the raw logs into a readable dashboard
 
-**Important safety note:** the honeypot never forwards or redirects attacker
-traffic anywhere else — it just absorbs and logs it. It also never runs as an
-administrator/root account, so even a clever attacker can't break out of the
-fake environment. My laptop is never exposed either way — it only ever reaches
-*out* to the AWS server, and attackers have no way to see or reach it.
 
----
 
-## Part 1: AWS Account & EC2 Instance
+Part 1: AWS Account & EC2 Instance
 
 **What AWS/EC2 is:** AWS is Amazon's cloud platform. EC2 lets you rent a small
 virtual server ("instance") instead of buying physical hardware — often free at
@@ -214,26 +208,12 @@ security group rule to "My IP" again first.)
 
 ---
 
-## Where I Am Right Now
 
-- [x] AWS account created
-- [x] EC2 instance launched (Ubuntu 24.04, t3.micro)
-- [x] Connected to the server via SSH from my laptop
-- [x] Installed Cowrie (SSH + Telnet honeypot)
-- [x] Tested Cowrie locally (confirmed logging works)
-- [x] Went live — honeypot is publicly exposed and collecting real attack data
-- [ ] Let it run and collect data, then pull logs and write up findings
-- [ ] Set up a VPN for easier/more convenient management access
-- [ ] Build a breach journal / dashboard app (decided on an interactive web
-      dashboard, Option B) — to build once enough real attack data has
-      accumulated
 
 ---
 
 ## Quick Reference
 
-| Item | Value |
-|---|---|
 | EC2 Public IP | `3.14.67.126` |
 | Key file | `honeypot-key-new.pem` (stored at `C:\Users\daman\`) |
 | Real SSH management port | `2200` (locked to My IP) |
@@ -250,48 +230,3 @@ security group rule to "My IP" again first.)
 
 ---
 
-## Resume-Ready Project Summary
-
-Use this section directly on a resume/portfolio page — worded for ATS
-(applicant tracking system) keyword scanning.
-
-**Cloud-Based SSH/Telnet Honeypot — Threat Intelligence Collection (Personal Project)**
-
-Designed, deployed, and operated a production-style honeypot on AWS EC2 to
-capture and analyze real-world unauthorized access attempts, applying core
-defensive/blue-team security practices in a self-directed environment.
-
-- Provisioned and hardened a cloud virtual machine (**AWS EC2**, Ubuntu Server
-  24.04 LTS) with least-privilege network access controls (**AWS Security
-  Groups**), staging access from fully restricted during build to a controlled
-  public exposure at launch
-- Deployed **Cowrie**, an open-source medium-interaction honeypot, to emulate
-  SSH and Telnet services and capture brute-force login attempts, credential
-  usage patterns, and post-exploitation command activity
-- Configured the honeypot to run under a dedicated **non-privileged service
-  account**, isolating it from system-level access per security best practices
-- Diagnosed and resolved a **systemd socket-activation conflict** preventing
-  SSH from binding to a custom port, migrating administrative access to an
-  isolated management port separate from the public-facing honeypot ports
-- Implemented **NAT/port-redirection rules (iptables)** to route standard
-  service ports (22, 23) to the honeypot's listener ports, replicating
-  real-world attacker-facing infrastructure
-- Managed remote Linux server administration via **SSH key-based
-  authentication**, including troubleshooting and resolving key-file
-  permission/ACL issues in a Windows client environment
-- Built and configured a Python-based application inside an isolated **virtual
-  environment (venv)**, managing dependencies via **pip** and version control
-  via **Git**
-- Verified end-to-end log capture by validating structured **JSON telemetry**
-  (session data, credentials attempted, command execution) prior to public
-  deployment
-- Structured the deployment for controlled, deliberate public exposure while
-  maintaining a fully isolated, low-privilege management channel, demonstrating
-  an understanding of network isolation and attack surface management
-- (Planned) Extending the project with a **VPN-secured management layer** and
-  a custom **interactive log-analysis dashboard** to convert raw JSON
-  telemetry into structured, visual incident summaries
-
-**Skills demonstrated:** AWS (EC2, Security Groups, IAM basics), Linux system
-administration, systemd, SSH/network security, iptables/NAT, Python, Git/GitHub,
-honeypot/deception technology, log analysis, threat intelligence fundamentals
