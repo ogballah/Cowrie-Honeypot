@@ -1,6 +1,6 @@
-**Cloud Honeypot Project — My Notes**
+## Cloud Honeypot Project — My Notes
 
-**Introduction: What This Project Is**
+## Introduction: What This Project Is
 
 I'm building a cloud honeypot, a fake server that pretends to be a real Linux
 machine with SSH (and Telnet) open. It sits on the internet and attracts bots and
@@ -26,7 +26,7 @@ The plan, phase by phase:
 
 
 
-**Part 1: AWS Account & EC2 Instance**
+## Part 1: AWS Account & EC2 Instance
 
 **What AWS/EC2 is:** AWS is Amazon's cloud platform. EC2 lets you rent a small
 virtual server ("instance") instead of buying physical hardware — often free at
